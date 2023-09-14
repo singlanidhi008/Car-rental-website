@@ -1,0 +1,12 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\AngularBackend",
+    "\\DataAccessLayer",
+    "\\DataAccessLayer\\Configuration",
+    "\\DataAccessLayer\\DbContext",
+    "\\DataAccessLayer\\Models"
+  ],
+  "SelectedNode": "\\AngularBackend\\Program.cs",
+  "PreviewInSolutionExplorer": false
+}
