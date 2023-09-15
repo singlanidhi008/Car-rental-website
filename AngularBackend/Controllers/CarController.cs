@@ -290,11 +290,32 @@ namespace AngularBackend.Controllers
             }
         }
 
+        [HttpPost("Promotion-code")]
+        public IActionResult CreatePromotionCode([FromBody] PromotionCodeCreateRequest request)
+        {
+            //StripeConfiguration.ApiKey = "sk_test_your_key";
 
+            var options = new PromotionCodeCreateOptions
+            {
+                Coupon = request.Coupon,
+            };
+
+            var service = new PromotionCodeService();
+
+            try
+            {
+                var promotionCode = service.Create(options);
+                return Ok(promotionCode);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
 
 
         [HttpGet("CheckOut-session")]
-        public async Task<IActionResult> GetUrl(string email, string PriceId, string paymentIntentId, string couponCode, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetUrl(string email, string PriceId, string paymentIntentId, string promoCode, CancellationToken cancellationToken)
         {
             var result = await _context.userTotalRent.FirstOrDefaultAsync(x => x._StripePriceID == PriceId);
             if (string.IsNullOrEmpty(email))
@@ -307,53 +328,106 @@ namespace AngularBackend.Controllers
             if (existingCustomer != null)
             {
                 var customerId = existingCustomer.Id;
-                var couponService = new CouponService();
-                var allCoupons = await couponService.ListAsync();
-                var matchingCoupon = allCoupons.FirstOrDefault(coupon => coupon.Id == couponCode);
 
-                if (matchingCoupon != null)
+                var sessionOptions = new SessionCreateOptions
                 {
-                        var sessionOptions = new SessionCreateOptions
-                        {
-                           Customer = customerId,
-                           PaymentMethodTypes = new List<string> { "card" },
-                           LineItems = new List<SessionLineItemOptions>
-                           {
-                                new SessionLineItemOptions
-                                {
-                                   Price = PriceId,
-                                   Quantity = 1,
-                                },
-                           },
-                              Mode = "payment",
-                              SuccessUrl = "https://your-website.com/success",
-                               CancelUrl = "https://your-website.com/cancel",
-                        };
-
-                    // Apply the coupon to the session
-                         sessionOptions.Discounts = new List<SessionDiscountOptions>
-                         {
-                             new SessionDiscountOptions
-                             {
-                                   Coupon = matchingCoupon.Id,
-                             },
-                         };
-
-                    var sessionService = new SessionService();
-                    var session = sessionService.Create(sessionOptions);
-
-                    return Ok(session);
-                }
-                else
+                    Customer = customerId,
+                    PaymentMethodTypes = new List<string> { "card" },
+                    LineItems = new List<SessionLineItemOptions>
+            {
+                new SessionLineItemOptions
                 {
-                    return BadRequest("Invalid coupon code.");
-                }
-                }
-                else
-                {
-                    return NotFound("Customer not found.");
-                }
+                    Price = PriceId,
+                    Quantity = 1,
+                },
+            },
+                    Mode = "payment",
+                    SuccessUrl = "https://your-website.com/success",
+                    CancelUrl = "https://your-website.com/cancel",
+                };
+
+                // Apply the promo code to the session
+                sessionOptions.Discounts = new List<SessionDiscountOptions>
+        {
+            new SessionDiscountOptions
+            {
+                PromotionCode = promoCode,
+            },
+        };
+
+                var sessionService = new SessionService();
+                var session = sessionService.Create(sessionOptions);
+
+                return Ok(session);
+            }
+            else
+            {
+                return NotFound("Customer not found.");
+            }
         }
+
+
+        //[HttpGet("CheckOut-session")]
+        //public async Task<IActionResult> GetUrl(string email, string PriceId, string paymentIntentId, string couponCode, CancellationToken cancellationToken)
+        //{
+        //    var result = await _context.userTotalRent.FirstOrDefaultAsync(x => x._StripePriceID == PriceId);
+        //    if (string.IsNullOrEmpty(email))
+        //    {
+        //        return BadRequest("Email address is required.");
+        //    }
+        //    var customerService = new CustomerService();
+        //    var existingCustomer = customerService.List(new CustomerListOptions { Email = email }).FirstOrDefault();
+
+        //    if (existingCustomer != null)
+        //    {
+        //        var customerId = existingCustomer.Id;
+        //        var couponService = new CouponService();
+        //        var allCoupons = await couponService.ListAsync();
+        //        var matchingCoupon = allCoupons.FirstOrDefault(coupon => coupon.Id == couponCode);
+
+        //        if (matchingCoupon != null)
+        //        {
+        //                var sessionOptions = new SessionCreateOptions
+        //                {
+        //                   Customer = customerId,
+        //                   PaymentMethodTypes = new List<string> { "card" },
+        //                   LineItems = new List<SessionLineItemOptions>
+        //                   {
+        //                        new SessionLineItemOptions
+        //                        {
+        //                           Price = PriceId,
+        //                           Quantity = 1,
+        //                        },
+        //                   },
+        //                      Mode = "payment",
+        //                      SuccessUrl = "https://your-website.com/success",
+        //                       CancelUrl = "https://your-website.com/cancel",
+        //                };
+
+        //            // Apply the coupon to the session
+        //                 sessionOptions.Discounts = new List<SessionDiscountOptions>
+        //                 {
+        //                     new SessionDiscountOptions
+        //                     {
+        //                           Coupon = matchingCoupon.Id,
+        //                     },
+        //                 };
+
+        //            var sessionService = new SessionService();
+        //            var session = sessionService.Create(sessionOptions);
+
+        //            return Ok(session);
+        //        }
+        //        else
+        //        {
+        //            return BadRequest("Invalid coupon code.");
+        //        }
+        //        }
+        //        else
+        //        {
+        //            return NotFound("Customer not found.");
+        //        }
+        //}
 
 
         [HttpPost("customer")]
